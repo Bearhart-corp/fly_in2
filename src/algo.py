@@ -35,13 +35,20 @@ class Algo2:
             self.apply_path(drone, path)
             Turn.set_turn(drone)
             self.update_usage(path, zone_usage, edge_usage)
-        for i, log in enumerate(Turn.logs.values()):
-            for tup in log:
-                if isinstance(tup[1], Zone):
-                    print(f"D{tup[0]}-{tup[1].name}", end=" ")
-                elif isinstance(tup[1], Connection):
-                    print(f"D{tup[0]}-{tup[1].src.name}-{tup[1].dest.name}", end=" ")
-            print("")
+        nb_char = 0
+        with open("log.txt", "w") as file:
+            for log in Turn.logs.values():
+                nb_char = 0
+                for tup in log:
+                    if isinstance(tup[1], Zone):
+                        nb_char += file.write(f"D{tup[0]}-{tup[1].name} ")
+                    elif isinstance(tup[1], Connection):
+                        nb_char += file.write(
+                            f"D{tup[0]}-{tup[1].src.name}-{tup[1].dest.name} ")
+                    if nb_char > 80:
+                        nb_char = 0
+                        file.write("\n")
+                file.write("\n")
 
     def find_path(
         self,
