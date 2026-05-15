@@ -123,9 +123,9 @@ class Algo2:
         drone.logs.append(zone)
         for src, dest in path:
             if dest.metadata.zone_type == "restricted":
-                drone.moves.append(((src.x + dest.x) // 2, (src.y + dest.y) // 2))
+                drone.moves.append(((src.x + dest.x) / 2, (src.y + dest.y) / 2))
                 drone.moves.append((dest.x, dest.y))
-                drone.logs.append(Connection(src=src, dest=dest))
+                drone.logs.append(Connection(src=src, dest=dest, metadata=None))
             else:
                 drone.moves.append((dest.x, dest.y))
                 drone.logs.append(dest)
