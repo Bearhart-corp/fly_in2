@@ -118,11 +118,17 @@ class Algo2:
     ) -> None:
         if not path:
             return
-        drone.moves.append((path[0][0].x, path[0][0].y))
-        drone.logs.append(path[0][0])
-        for _, dest in path:
-            drone.moves.append((dest.x, dest.y))
-            drone.logs.append(dest)
+        zone = path[0][0]
+        drone.moves.append((zone.x, zone.y))
+        drone.logs.append(zone)
+        for src, dest in path:
+            if dest.metadata.zone_type == "restricted":
+                drone.moves.append(((src.x + dest.x) // 2, (src.y + dest.y) // 2))
+                drone.moves.append((dest.x, dest.y))
+                drone.logs.append(Connection(src=src, dest=dest))
+            else:
+                drone.moves.append((dest.x, dest.y))
+                drone.logs.append(dest)
 
     def update_usage(
         self,
