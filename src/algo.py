@@ -56,21 +56,14 @@ class Algo2:
         zone_cap: DefaultDict,
         edge_cap: DefaultDict
     ) -> List[Tuple[Zone, Zone]]:
-        # STATE = (zone, turn)
         start_state = (self.start, 0)
-        # heap:
-        # (distance, unique_id, state)
         pq: List = []
-        heapq.heappush(
-            pq,
-            (0, next(self._id_), start_state)
-        )
-        # coût minimal pour atteindre un état
+        heapq.heappush(pq,(next(self._id_), start_state))
         cost: DefaultDict = defaultdict(lambda: float("inf"))
         cost[start_state] = 0
         parent: dict = {}
         while pq:
-            cur_dist, _, cur_state = heapq.heappop(pq)
+            _, cur_state = heapq.heappop(pq)
             cur_zone, cur_turn = cur_state
             if cur_zone == self.end:
                 return self.reconstruct(parent, cur_state)
@@ -80,52 +73,28 @@ class Algo2:
                 if nxt.metadata.zone_type == "blocked":
                     continue
                 move_cost = ZoneType.zone.get(
-                    nxt.metadata.zone_type
-                )
+                    nxt.metadata.zone_type)
                 nxt_turn = cur_turn + move_cost
                 nxt_state = (nxt, nxt_turn)
-                if (
-                    zone_cap[(nxt.name, nxt_turn)]
-                    >= nxt.metadata.max_drones
-                ):
+                if (zone_cap[(nxt.name, nxt_turn)]
+                    >= nxt.metadata.max_drones):
                     continue
-                if (
-                    edge_cap[((
-                        con.src.name,
-                        con.dest.name),
-                        nxt_turn)] >= con.metadata.max_link_capacity
-                ):
+                if (edge_cap[((con.src.name, con.dest.name),
+                        nxt_turn)] >= con.metadata.max_link_capacity):
                     continue
-                new_cost = cur_dist + move_cost
-                if new_cost < cost[nxt_state]:
-                    cost[nxt_state] = new_cost
+                if nxt_turn < cost[nxt_state]:
+                    cost[nxt_state] = nxt_turn
                     parent[nxt_state] = cur_state
-                    heapq.heappush(
-                        pq,
-                        (
-                            new_cost,
-                            next(self._id_),
-                            nxt_state
-                        )
-                    )
+                    heapq.heappush(pq,(next(self._id_), nxt_state))
             wait_turn = cur_turn + 1
             wait_state = (cur_zone, wait_turn)
-            if (
-                zone_cap[(cur_zone.name, wait_turn)]
-                < cur_zone.metadata.max_drones
-            ):
-                wait_cost = cur_dist + 1
+            if (zone_cap[(cur_zone.name, wait_turn)]
+                < cur_zone.metadata.max_drones):
+                wait_cost = cur_turn + 1
                 if wait_cost < cost[wait_state]:
                     cost[wait_state] = wait_cost
                     parent[wait_state] = cur_state
-                    heapq.heappush(
-                        pq,
-                        (
-                            wait_cost,
-                            next(self._id_),
-                            wait_state
-                        )
-                    )
+                    heapq.heappush(pq, (next(self._id_), wait_state))
         raise Exception("No path found")
 
     def reconstruct(
@@ -169,10 +138,5 @@ class Algo2:
             move_cost = ZoneType.zone[dest.metadata.zone_type]
             turn += move_cost - 1
             zone_cap[(dest.name, turn)] += 1
-            edge_cap[
-                (
-                    (src.name, dest.name),
-                    turn
-                )
-            ] += 1
+            edge_cap[((src.name, dest.name), turn)] += 1
             turn += 1
