@@ -4,7 +4,7 @@ from pygame.font import Font
 from .asset import screen_size
 from typing import Tuple, List
 from .graph import Graph
-from .domain_class import Zone
+from .domain_class import Zone, Drone
 from pygame.locals import (
     K_ESCAPE,
     KEYDOWN,
@@ -111,6 +111,7 @@ class Visual:
         for z in graph.zones.values():
             x, y = mapper.to_screen(z.x, z.y)
             all_pos.append(Visual.grid2screen(x, y, HubSize.center, 0))
+        drones_moves = Visual.convert_drones(graph.drones, mapper)
         running = True
         while running:
             dt = clock.tick(60) / speed
@@ -135,6 +136,7 @@ class Visual:
                         for j in range(ratio_w):
                             static_surf.blit(tile, (j * img_w, i * img_h))
                     HubSize.init(w, h, mapper)
+                    drones_moves = Visual.convert_drones(graph.drones, mapper)
                     font = pygame.font.Font(None, HubSize.size // 5)
                     img = pygame.image.load("drones_img/drones.png")
                     img = pygame.transform.smoothscale(img,
@@ -156,35 +158,45 @@ class Visual:
             Visual._draw_hubs(graph.zones, static_surf, font, b_img, all_pos)
             screen.blit(static_surf, (0, 0))
             Visual._create_drones(
-                graph, screen, mapper, HubSize.center, img, font, turn, t)
+                drones_moves, screen, img, font, turn, t)
             pygame.display.flip()
         pygame.quit()
 
     @staticmethod
-    def _create_drones(graph: Graph,
+    def convert_drones(drones: List[Drone],
+                       mapper: CoordinateMapper
+                        ) -> List[List[Tuple[int, int]]]:
+        res = []
+        for drone in drones:
+            inter = []
+            for (x, y) in drone.moves:
+                x, y = mapper.to_screen(x, y)
+                x, y = Visual.grid2screen(x, y, HubSize.center, 0)
+                inter.append((x, y))
+            res.append(inter)
+        return res
+
+    @staticmethod
+    def _create_drones(moves_lst: List[List[Tuple[int, int]]],
                        screen: pygame.Surface,
-                       mapper: CoordinateMapper,
-                       center: int,
                        img: pygame.Surface,
                        font: Font,
                        turn: int,
                        t: float) -> None:
-        for drone in graph.drones:
-            if not drone.moves:
+        for k, moves in enumerate(moves_lst):
+            if not moves:
                 continue
-            i = min(turn, len(drone.moves) - 1)
-            j = min(i + 1, len(drone.moves) - 1)
-            x, y = drone.moves[i]
-            x1, y1 = drone.moves[j]
-            x, y = mapper.to_screen(x, y)
-            x1, y1 = mapper.to_screen(x1, y1)
-            x, y = Visual.grid2screen(x, y, center, 0)
-            x1, y1 = Visual.grid2screen(x1, y1, center, 0)
+            i = min(turn, len(moves) - 1)
+            j = min(i + 1, len(moves) - 1)
+            x, y = moves[i]
+            x1, y1 = moves[j]
             src = Vector(x, y)
             dst = Vector(x1, y1)
+            if src == dst:
+                continue
             pos = src + (dst - src) * t
             screen.blit(img, pos.to_tuple())
-            text_surface = font.render(str(drone.id), True, (255, 255, 255))
+            text_surface = font.render(str(k), True, (255, 255, 255))
             calcul = pos + Vector(HubSize.size // 2, HubSize.size // 2)
             screen.blit(text_surface, calcul.to_tuple())
             Visual.show_turn(turn, font, screen)
