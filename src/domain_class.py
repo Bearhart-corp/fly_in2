@@ -1,4 +1,4 @@
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 
 class ZoneMetadata:
@@ -47,6 +47,7 @@ class Drone:
     def __init__(self, id: int) -> None:
         self.id = id
         self.moves: List[Tuple[int, int]] = []
+        self.logs = []
 
 
 class Connection:
@@ -58,4 +59,7 @@ class Connection:
     ) -> None:
         self.src = src
         self.dest = dest
-        self.metadata = metadata
+        if metadata:
+           self.metadata = metadata
+        else:
+            self.metadata = ConnectionMetadata()
