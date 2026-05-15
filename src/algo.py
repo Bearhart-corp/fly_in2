@@ -2,9 +2,19 @@ from collections import defaultdict
 import heapq
 import itertools
 from .enumeration import ZoneType
-from src.domain_class import Zone, Drone
+from src.domain_class import Zone, Drone, Connection
 from .graph import Graph
 from typing import DefaultDict, List, Tuple
+
+
+class Turn:
+    logs = {}
+    @classmethod
+    def set_turn(cls, drone: Drone) -> None:
+        for nb_turn, log in enumerate(drone.logs):
+            if not cls.logs.get(nb_turn):
+                cls.logs[nb_turn] = []
+            cls.logs[nb_turn].append((drone.id, log))
 
 
 class Algo2:
@@ -23,7 +33,15 @@ class Algo2:
         for drone in graph.drones:
             path = self.find_path(graph, zone_usage, edge_usage)
             self.apply_path(drone, path)
+            Turn.set_turn(drone)
             self.update_usage(path, zone_usage, edge_usage)
+        for i, log in enumerate(Turn.logs.values()):
+            for tup in log:
+                if isinstance(tup[1], Zone):
+                    print(f"D{tup[0]}-{tup[1].name}", end=" ")
+                elif isinstance(tup[1], Connection):
+                    print(f"D{tup[0]}-{tup[1].src.name}-{tup[1].dest.name}", end=" ")
+            print("")
 
     def find_path(
         self,
@@ -125,8 +143,10 @@ class Algo2:
         if not path:
             return
         drone.moves.append((path[0][0].x, path[0][0].y))
+        drone.logs.append(path[0][0])
         for _, dest in path:
             drone.moves.append((dest.x, dest.y))
+            drone.logs.append(dest)
 
     def update_usage(
         self,
